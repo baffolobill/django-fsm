@@ -6,11 +6,12 @@ import inspect
 from functools import wraps
 import sys
 
-from django.db import models
 from django.db.models.loading import get_model
 from django.db.models.signals import class_prepared
 from django.utils.functional import curry
 from django_fsm.signals import pre_transition, post_transition
+
+import mongoengine.fields
 
 
 __all__ = ['TransitionNotAllowed', 'ConcurrentTransition',
@@ -351,7 +352,7 @@ class FSMFieldMixin(object):
         self.transitions[sender] = sender_transitions
 
 
-class FSMField(FSMFieldMixin, models.CharField):
+class FSMField(FSMFieldMixin, mongoengine.fields.StringField):
     """
     State Machine support for Django model as CharField
     """
@@ -360,16 +361,20 @@ class FSMField(FSMFieldMixin, models.CharField):
         super(FSMField, self).__init__(*args, **kwargs)
 
 
-class FSMIntegerField(FSMFieldMixin, models.IntegerField):
+class FSMIntegerField(FSMFieldMixin, mongoengine.fields.IntField):
     """
-    Same as FSMField, but stores the state value in an IntegerField.
+    Same as FSMField, but stores the state value in an IntField 
+    (an 32-bit integer field).
     """
     pass
 
 
-class FSMKeyField(FSMFieldMixin, models.ForeignKey):
+class FSMKeyField(FSMFieldMixin, mongoengine.fields.ReferenceField):
     """
     State Machine support for Django model
+    
+    IMPORTANT! Use with caution. I'm new with MongoDB and Mongoengine.
+    So, I'm not sure about replacing ForeignKey to ReferenceField.
     """
     def get_state(self, instance):
         return instance.__dict__[self.attname]
